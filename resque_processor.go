@@ -3,6 +3,7 @@ package resque_status
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/benmanns/goworker"
@@ -32,30 +33,28 @@ func (rp *ResqueProcessor) Process(queue string, args ...interface{}) error {
 
 	params := args[1].(map[string]interface{})
 
-	keyParams := map[string]interface{}{}
-	for _, key := range rp.KeyParamNames {
-		keyParams[key] = params[key]
-	}
-	defer rp.unlock(keyParams)
+	defer rp.unlock(params)
 
 	return rp.Handler(params)
 }
 
-func (rp *ResqueProcessor) unlock(keyParams map[string]interface{}) error {
+func (rp *ResqueProcessor) unlock(params map[string]interface{}) error {
 	conn, err := goworker.GetConn()
 	defer goworker.PutConn(conn)
 	if err != nil {
 		return err
 	}
-	conn.Do("DEL", rp.buildLockKey(keyParams))
+	lockKey := rp.LockKey(params)
+	conn.Do("DEL", lockKey)
 	return nil
 }
 
-func (rp *ResqueProcessor) buildLockKey(keyParams map[string]interface{}) string {
+func (rp *ResqueProcessor) LockKey(params map[string]interface{}) string {
 
 	lockKeyParts := []string{}
-	for key, value := range keyParams {
-		lockKeyParts = append(lockKeyParts, fmt.Sprintf("%s=%v", key, value))
+	sort.Strings(rp.KeyParamNames)
+	for _, key := range rp.KeyParamNames {
+		lockKeyParts = append(lockKeyParts, fmt.Sprintf("%s=%v", key, params[key]))
 	}
 	return fmt.Sprintf("resque:lock:%s-%s", rp.LockKeyPrefix, strings.Join(lockKeyParts, "|"))
 }
