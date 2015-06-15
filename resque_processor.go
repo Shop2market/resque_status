@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/benmanns/goworker"
+	"github.com/Shop2market/goworker"
 )
 
 type ResqueProcessor struct {
