@@ -1,10 +1,13 @@
 package resque_status
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/Shop2market/goworker"
 )
@@ -14,6 +17,20 @@ type ResqueProcessor struct {
 	LockKeyPrefix string
 	KeyParamNames []string
 	Handler
+}
+
+func Enqueue(queue, jobName string, params map[string]interface{}) error {
+	md5Bytes := md5.Sum([]byte(time.Now().String()))
+	return goworker.Enqueue(&goworker.Job{
+		Queue: queue,
+		Payload: goworker.Payload{
+			Class: jobName,
+			Args: []interface{}{
+				hex.EncodeToString(md5Bytes[:]),
+				params,
+			},
+		},
+	})
 }
 
 type Handler func(map[string]interface{}) error
