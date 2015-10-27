@@ -114,7 +114,7 @@ func (rp *ResqueProcessor) saveJobStatus(conn *goworker.RedisConn, uuid string, 
 
 func (rp *ResqueProcessor) readJobStatus(conn *goworker.RedisConn, uuid string) (status, error) {
 	jobStatus, err := conn.Do("GET", "resque:status:"+uuid)
-	if err != nil {
+	if err != nil || jobStatus == nil {
 		return status{}, err
 	}
 	serializedStatus := status{}
