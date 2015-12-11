@@ -11,3 +11,18 @@ func ParseInt(params map[string]interface{}, name string) (int, error) {
 	}
 	return int(intValue), nil
 }
+
+func ParseIntArray(params map[string]interface{}, name string) ([]int, error) {
+	jsonNumbers := params[name].([]interface{})
+	intNumbers := []int{}
+
+	for _, jsonNumber := range jsonNumbers {
+		intValue, err := jsonNumber.(json.Number).Int64()
+		if err != nil {
+			return nil, err
+		}
+		intNumbers = append(intNumbers, int(intValue))
+
+	}
+	return intNumbers, nil
+}
