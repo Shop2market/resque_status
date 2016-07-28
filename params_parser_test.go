@@ -26,5 +26,15 @@ var _ = Describe("ParamsParser", func() {
 			Expect(actualParsed).To(Equal([]int{10, 20}))
 		})
 	})
-
+	Context("Parse Json array", func() {
+		It("parses misc data types", func() {
+			params := map[string]interface{}{"json_data": `[{"W":"1", "P": 100.10, "B":true},{"Winkelproductcode":"12346", "Titel":"WW","PriceIn": 200}]`}
+			actualParsed, err := ParseJsonParam(params, "json_data")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(actualParsed).To(Equal([]map[string]string{
+				map[string]string{"W": "1", "P": "100.1", "B": "true"},
+				map[string]string{"Winkelproductcode": "12346", "Titel": "WW", "PriceIn": "200"},
+			}))
+		})
+	})
 })
