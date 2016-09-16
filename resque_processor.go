@@ -19,6 +19,8 @@ type ResqueProcessor struct {
 	Handler
 }
 
+var ExpiresIn *int64
+
 func Enqueue(queue, jobName string, params map[string]interface{}) error {
 	md5Bytes := md5.Sum([]byte(time.Now().String()))
 	return goworker.Enqueue(&goworker.Job{
@@ -108,6 +110,12 @@ func (rp *ResqueProcessor) saveJobStatus(conn *goworker.RedisConn, uuid string, 
 	_, err = conn.Do("SET", "resque:status:"+uuid, statusBytes)
 	if err != nil {
 		return err
+	}
+	if ExpiresIn != nil {
+		_, err = conn.Do("EXPIRE", "resque:status:"+uuid, *ExpiresIn)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
