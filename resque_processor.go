@@ -21,6 +21,12 @@ type ResqueProcessor struct {
 
 var ExpiresIn *int64
 
+func init() {
+	var defaultExpiresIn int64
+	defaultExpiresIn = 24 * 60 * 60 // 24 hours in seconds
+	ExpiresIn = &defaultExpiresIn
+}
+
 func Enqueue(queue, jobName string, params map[string]interface{}) error {
 	md5Bytes := md5.Sum([]byte(time.Now().String()))
 	return goworker.Enqueue(&goworker.Job{
