@@ -36,6 +36,8 @@ var _ = Describe("Enqueue", func() {
 			params := map[string]interface{}{"id": 10, "year": "2015", "debug": true}
 			Expect(enq.Enqueue(params)).NotTo(HaveOccurred())
 			Expect(redisConnection.Do("GET", "resque:lock:Job::Class-id=10|year=2015")).To(BeEquivalentTo(`NEW_UUID`))
+			Expect(redisConnection.Do("EXISTS", "resque:queue:gen")).To(BeEquivalentTo(1))
+			Expect(redisConnection.Do("EXISTS", "resque:queues")).To(BeEquivalentTo(1))
 			Expect(enq.Enqueue(params)).NotTo(HaveOccurred())
 		})
 	})
