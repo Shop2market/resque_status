@@ -9,8 +9,7 @@ import (
 )
 
 type ResqueEnqueuer struct {
-	JobName string
-	Queue   string
+	JobName, Queue string
 	Lock
 }
 
@@ -41,8 +40,8 @@ func generateUUID() string {
 	return hex.EncodeToString(md5Bytes[:])
 }
 
-func NewEnqueuer(jobName, queue, lockKeyPrefix string, keyParamNames []string) *ResqueEnqueuer {
-	return &ResqueEnqueuer{JobName: jobName, Queue: queue, Lock: Lock{LockKeyPrefix: lockKeyPrefix, KeyParamNames: keyParamNames}}
+func NewEnqueuer(jobName, queue string, keyParamNames []string) *ResqueEnqueuer {
+	return &ResqueEnqueuer{JobName: jobName, Queue: queue, Lock: Lock{LockKeyPrefix: jobName, KeyParamNames: keyParamNames}}
 }
 
 func (re *ResqueEnqueuer) Enqueue(params JobParams) error {

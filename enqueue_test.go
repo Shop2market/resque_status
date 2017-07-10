@@ -32,7 +32,7 @@ var _ = Describe("Enqueue", func() {
 	})
 	Context("Lock", func() {
 		It("creates lock for a job if defined one", func() {
-			enq := NewEnqueuer("test", "gen", "Job::Class", []string{"id", "year"})
+			enq := NewEnqueuer("Job::Class", "gen", []string{"id", "year"})
 			params := map[string]interface{}{"id": 10, "year": "2015", "debug": true}
 			Expect(enq.Enqueue(params)).NotTo(HaveOccurred())
 			Expect(redisConnection.Do("GET", "resque:lock:Job::Class-id=10|year=2015")).To(BeEquivalentTo(`NEW_UUID`))
