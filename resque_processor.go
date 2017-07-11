@@ -1,24 +1,22 @@
 package resque_status
 
 import (
-	"crypto/md5"
-	"encoding/hex"
 	"encoding/json"
-	"fmt"
-	"sort"
-	"strings"
-	"time"
 
 	"github.com/Shop2market/goworker"
 )
 
+// ResqueProcessor - Main Processor type
 type ResqueProcessor struct {
-	JobName       string
-	LockKeyPrefix string
-	KeyParamNames []string
+	JobName string
+	Lock
 	Handler
 }
 
+// JobParams - arguments from resque jobs
+type JobParams map[string]interface{}
+
+// ExpiresIn - expiration config for jobs, default 24h
 var ExpiresIn *int64
 
 func init() {
@@ -27,34 +25,21 @@ func init() {
 	ExpiresIn = &defaultExpiresIn
 }
 
-func Enqueue(queue, jobName string, params map[string]interface{}) error {
-	md5Bytes := md5.Sum([]byte(time.Now().String()))
-	return goworker.Enqueue(&goworker.Job{
-		Queue: queue,
-		Payload: goworker.Payload{
-			Class: jobName,
-			Args: []interface{}{
-				hex.EncodeToString(md5Bytes[:]),
-				params,
-			},
-		},
-	})
-}
-
-type Handler func(map[string]interface{}) error
+// Handler Job handler function
+type Handler func(JobParams) error
 
 func NewResqueProcessor(jobName, lockKeyPrefix string, keyParamNames []string, handler Handler) *ResqueProcessor {
-	return &ResqueProcessor{JobName: jobName, LockKeyPrefix: lockKeyPrefix, KeyParamNames: keyParamNames, Handler: handler}
+	return &ResqueProcessor{JobName: jobName, Lock: Lock{LockKeyPrefix: lockKeyPrefix, KeyParamNames: keyParamNames}, Handler: handler}
 }
 
 func (rp *ResqueProcessor) Process(queue string, args ...interface{}) error {
-	jobUuid := args[0].(string)
+	jobUUID := args[0].(string)
 
-	err := rp.updateStatus(jobUuid, "working")
+	err := rp.updateStatus(jobUUID, "working")
 	if err != nil {
 		return err
 	}
-	defer rp.updateStatus(jobUuid, "completed")
+	defer rp.updateStatus(jobUUID, "completed")
 
 	params := args[1].(map[string]interface{})
 
@@ -69,19 +54,8 @@ func (rp *ResqueProcessor) unlock(params map[string]interface{}) error {
 	if err != nil {
 		return err
 	}
-	lockKey := rp.LockKey(params)
-	conn.Do("DEL", lockKey)
-	return nil
-}
-
-func (rp *ResqueProcessor) LockKey(params map[string]interface{}) string {
-
-	lockKeyParts := []string{}
-	sort.Strings(rp.KeyParamNames)
-	for _, key := range rp.KeyParamNames {
-		lockKeyParts = append(lockKeyParts, fmt.Sprintf("%s=%v", key, params[key]))
-	}
-	return fmt.Sprintf("resque:lock:%s-%s", rp.LockKeyPrefix, strings.Join(lockKeyParts, "|"))
+	_, err = conn.Do("DEL", rp.Key(params))
+	return err
 }
 
 func (rp *ResqueProcessor) updateStatus(uuid, statusString string) error {
@@ -140,6 +114,6 @@ type status struct {
 	Time    int64                  `json:"time"`
 	Status  string                 `json:"status"`
 	Name    string                 `json:"name"`
-	Uuid    string                 `json:"uuid"`
+	UUID    string                 `json:"uuid"`
 	Options map[string]interface{} `json:"options"`
 }
