@@ -5,7 +5,7 @@
   branch = "master"
   name = "github.com/Shop2market/goworker"
   packages = ["."]
-  revision = "44308b5d38d3d40c6c7ccc9540ff5eade0f66aef"
+  revision = "56fb9c9a92ba65ce4c49d690203509dca003cbc4"
 
 [[projects]]
   name = "github.com/cihub/seelog"
